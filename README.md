@@ -16,9 +16,34 @@ A C++ application with Qt GUI for pricing financial options using Black-Scholes 
 - CMake 3.1 or higher
 - Qt 5.x
 
-### For Mac (using Homebrew)
+### Installation Instructions
+
+#### For Mac (using Homebrew)
 ```bash
 brew install qt@5
+```
+
+#### For Ubuntu/Debian
+```bash
+sudo apt-get update
+sudo apt-get install build-essential  # For C++ compilation
+sudo apt-get install cmake           # For building
+sudo apt-get install qt5-default     # Qt5 base
+sudo apt-get install qtbase5-dev     # Qt5 development files
+```
+
+#### For Fedora
+```bash
+sudo dnf install gcc-c++            # C++ compiler
+sudo dnf install cmake              # Build system
+sudo dnf install qt5-qtbase-devel   # Qt5 development files
+```
+
+#### For Arch Linux
+```bash
+sudo pacman -S base-devel    # Development tools
+sudo pacman -S cmake         # Build system
+sudo pacman -S qt5-base      # Qt5
 ```
 
 ## Building the Project
@@ -75,8 +100,7 @@ option_pricing/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
