@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1.0)
-project(options_pricing VERSION 1.0.0 LANGUAGES CXX)
+
+project(option_pricing)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,49 +8,54 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_PREFIX_PATH "/opt/homebrew/Cellar/qt@5/5.15.15_2")
+# For macOS with Homebrew Qt installation
+list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt@6")
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+# Find Qt package
+find_package(Qt6 COMPONENTS Core Widgets REQUIRED)
+# If Qt6 is not found, try Qt5
+if (NOT Qt6_FOUND)
+    find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
+endif()
 
-# Define source files
-set(CORE_SOURCES
-    src/core/greek_calculations.cpp
-    src/core/option_pricing.cpp
+# Add source files
+set(SOURCES
+    main.cpp
+    option_pricing.cpp
+    greek_calculations.cpp
+    option_pricing_gui.cpp
 )
 
-set(GUI_SOURCES
-    src/gui/options_gui.cpp
-)
-
+# Add header files
 set(HEADERS
-    src/core/greek_calculations.h
-    src/core/math_utils.h
-    src/core/option_pricing.h
-    src/core/pricing_exceptions.h
-    src/core/types.h
-    src/gui/options_gui.h
+    option_pricing.h
+    greek_calculations.h
+    math_utils.h
+    types.h
+    pricing_exceptions.h
+    option_pricing_gui.h
 )
 
 # Create executable
-add_executable(options_pricing
-    src/main.cpp
-    ${CORE_SOURCES}
-    ${GUI_SOURCES}
-    ${HEADERS}
-)
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-# Include directories
-target_include_directories(options_pricing PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gui
-)
-
-# Link Qt libraries
-target_link_libraries(options_pricing PRIVATE
-    Qt5::Widgets
-)
-
-# Install rules
-install(TARGETS options_pricing
-    RUNTIME DESTINATION bin
-)
+# Link Qt and include directories
+if (Qt6_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt6::Core
+        Qt6::Widgets
+    )
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${Qt6Core_INCLUDE_DIRS}
+        ${Qt6Widgets_INCLUDE_DIRS}
+    )
+else()
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt5::Core
+        Qt5::Widgets
+    )
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${Qt5Core_INCLUDE_DIRS}
+        ${Qt5Widgets_INCLUDE_DIRS}
+    )
+endif()

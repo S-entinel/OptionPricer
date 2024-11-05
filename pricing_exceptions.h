@@ -14,4 +14,9 @@ public:
     NumericalError(const std::string& message) : OptionPricingError("Numerical Error: " + message) {}
 };
 
+class InputValidationError : public std::runtime_error {
+public:
+    InputValidationError(const std::string& message) : std::runtime_error(message) {}
+};
+
 #endif // PRICING_EXCEPTIONS_H
