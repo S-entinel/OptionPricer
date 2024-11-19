@@ -9,19 +9,47 @@
 
 template<typename T>
 void validateOptionParametersT(const OptionParametersT<T>& params) {
-    if (params.S <= T(0)) throw OptionPricingError("Stock price must be positive");
-    if (params.K <= T(0)) throw OptionPricingError("Strike price must be positive");
-    if (params.r < T(0)) throw OptionPricingError("Risk-free rate cannot be negative");
-    if (params.sigma <= T(0)) throw OptionPricingError("Volatility must be positive");
-    if (params.expiry <= T(0)) throw OptionPricingError("Time to expiration must be positive");
-    if (params.q < T(0)) throw OptionPricingError("Dividend yield cannot be negative");
-    if (std::isnan(params.S) || std::isnan(params.K) || std::isnan(params.r) || 
-        std::isnan(params.sigma) || std::isnan(params.expiry) || std::isnan(params.q)) {
-        throw OptionPricingError("Input parameters contain NaN values");
-    }
-    if (std::isinf(params.S) || std::isinf(params.K) || std::isinf(params.r) || 
-        std::isinf(params.sigma) || std::isinf(params.expiry) || std::isinf(params.q)) {
-        throw OptionPricingError("Input parameters contain infinite values");
+    // Lambda for checking positive values
+    auto checkPositive = [](T value, const std::string& name) {
+        if (value <= T(0)) {
+            throw OptionPricingError(name + " must be positive");
+        }
+    };
+
+    // Lambda for checking non-negative values
+    auto checkNonNegative = [](T value, const std::string& name) {
+        if (value < T(0)) {
+            throw OptionPricingError(name + " cannot be negative");
+        }
+    };
+
+    // Lambda for checking for invalid numbers
+    auto checkValidNumber = [](T value, const std::string& name) {
+        if (std::isnan(value) || std::isinf(value)) {
+            throw OptionPricingError(name + " contains invalid value");
+        }
+    };
+
+    // Apply validation checks
+    checkPositive(params.S, "Stock price");
+    checkPositive(params.K, "Strike price");
+    checkNonNegative(params.r, "Risk-free rate");
+    checkPositive(params.sigma, "Volatility");
+    checkPositive(params.expiry, "Time to expiration");
+    checkNonNegative(params.q, "Dividend yield");
+
+    // Check for invalid numbers
+    std::array<std::pair<T, std::string>, 6> checks = {{
+        {params.S, "Stock price"},
+        {params.K, "Strike price"},
+        {params.r, "Risk-free rate"},
+        {params.sigma, "Volatility"},
+        {params.expiry, "Time to expiration"},
+        {params.q, "Dividend yield"}
+    }};
+
+    for (const auto& [value, name] : checks) {
+        checkValidNumber(value, name);
     }
 }
 
