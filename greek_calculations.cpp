@@ -69,43 +69,56 @@ Greeks calculateGreeksBS(const OptionParameters& params) {
 Greeks calculateGreeksFD(const OptionParameters& params, 
                         const std::function<double(const OptionParameters&)>& pricingFunction) {
     Greeks greeks;
-    const double h = params.S * 0.0001;    // Smaller step for delta/gamma
+    const double h = params.S * 0.0001;    // Step for delta/gamma
     const double dt = 1.0 / 365.0;         // One day for theta
-    const double dvol = 0.0001;            // Smaller step for vega
-    const double dr = 0.0001;              // 1 basis point for rho
+    const double dvol = 0.0001;            // Step for vega
+    const double dr = 0.0001;              // Step for rho
 
-    // Delta and Gamma calculations
-    OptionParameters upParams = params;
-    OptionParameters downParams = params;
-    
-    upParams.S += h;
-    downParams.S -= h;
-    
-    double priceUp = pricingFunction(upParams);
-    double priceDown = pricingFunction(downParams);
+    // Lambda for calculating finite difference
+    auto calculateFiniteDiff = [&](auto& paramMod, double step, auto modifyParam) {
+        OptionParameters upParam = params;
+        modifyParam(upParam, step);
+        return (pricingFunction(upParam) - pricingFunction(params)) / step;
+    };
+
+    // Lambda for central difference
+    auto calculateCentralDiff = [&](auto& paramMod, double step, auto modifyParam) {
+        OptionParameters upParam = params;
+        OptionParameters downParam = params;
+        modifyParam(upParam, step);
+        modifyParam(downParam, -step);
+        return (pricingFunction(upParam) - pricingFunction(downParam)) / (2.0 * step);
+    };
+
+    // Calculate price at current parameters
     double priceMiddle = pricingFunction(params);
-    
-    greeks.delta = (priceUp - priceDown) / (2.0 * h);
-    greeks.gamma = (priceUp - 2.0 * priceMiddle + priceDown) / (h * h);
+
+    // Delta calculation using central difference
+    greeks.delta = calculateCentralDiff(params.S, h, 
+        [](OptionParameters& p, double step) { p.S += step; });
+
+    // Gamma calculation
+    auto upDelta = calculateFiniteDiff(params.S, h, 
+        [](OptionParameters& p, double step) { p.S += step; });
+    auto downDelta = calculateFiniteDiff(params.S, -h, 
+        [](OptionParameters& p, double step) { p.S += step; });
+    greeks.gamma = (upDelta - downDelta) / (2.0 * h);
 
     // Theta calculation
-    OptionParameters thetaParams = params;
-    thetaParams.expiry -= dt;
-    if (thetaParams.expiry > 0.0) {
-        greeks.theta = -(pricingFunction(thetaParams) - priceMiddle) / dt;
+    if (params.expiry > 0.0) {
+        greeks.theta = -calculateFiniteDiff(params.expiry, -dt,
+            [](OptionParameters& p, double step) { p.expiry += step; });
     } else {
         greeks.theta = 0.0;
     }
-    
+
     // Vega calculation
-    OptionParameters vegaParams = params;
-    vegaParams.sigma += dvol;
-    greeks.vega = (pricingFunction(vegaParams) - priceMiddle) / dvol;
+    greeks.vega = calculateFiniteDiff(params.sigma, dvol,
+        [](OptionParameters& p, double step) { p.sigma += step; });
 
     // Rho calculation
-    OptionParameters rhoParams = params;
-    rhoParams.r += dr;
-    greeks.rho = (pricingFunction(rhoParams) - priceMiddle) / dr;
+    greeks.rho = calculateFiniteDiff(params.r, dr,
+        [](OptionParameters& p, double step) { p.r += step; });
 
     return greeks;
 }
